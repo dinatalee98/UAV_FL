@@ -12,10 +12,18 @@ class UAVClient(fl.client.NumPyClient):
 
     def fit(self, parameters, config):
         self.model.set_weights(parameters)
-        # Perform training on the device's local data
-        self.model.train(self.data['X_train'], self.data['y_train'], epochs=1)
-        return self.model.get_weights(), len(self.data['X_train']), {}
+        
+        # Calculate energy constraints
+        remaining_energy = calculate_remaining_energy(self.device_id)
+        if remaining_energy < threshold:
+            # Reduce training time or skip a round
+            epochs = 1
+        else:
+            epochs = 5
 
+        self.model.train(self.data['X_train'], self.data['y_train'], epochs=epochs)
+        return self.model.get_weights(), len(self.data['X_train']), {}
+    
     def evaluate(self, parameters, config):
         self.model.set_weights(parameters)
         loss, accuracy = self.model.evaluate(self.data['X_test'], self.data['y_test'])
