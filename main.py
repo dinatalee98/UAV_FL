@@ -32,7 +32,7 @@ class Client(fl.client.NumPyClient):
         loss, accuracy = self.model.evaluate(self.data['X_test'], self.data['y_test'])
         return loss, len(self.data['X_test']), {"accuracy": accuracy}
 
-def create_model():
+def create_model(input_shape, num_classes):
     model = models.Sequential([
         layers.Dense(64, activation='relu', input_shape=(input_shape,)),
         layers.Dense(64, activation='relu'),
@@ -45,10 +45,6 @@ def run_client(device_id, data):
     model = create_model()
     client = Client(device_id, data, model)
     fl.client.start_numpy_client(server_address="0.0.0.0:8080", client=client)
-
-# Example: Running the first client
-data = {'X_train': X_train, 'y_train': y_train, 'X_test': X_test, 'y_test': y_test}
-run_client(device_id=1, data=data)
 
 # Define the aggregation function
 def weighted_average(metrics):
@@ -82,48 +78,23 @@ def computation_time_energy(c_k, D_k, f_k, a_k, alpha_k):
 ###
 ### Communication model
 ###
+def LoS_prob(H_u, d_k):
+    theta_k = np.arctan(H_u / d_k)
+    zeta1 = 3 # constants depending on theta_k s
+    zeta2 = 3
+    return(1 / (1 + zeta1 * np.exp(-zeta2(180/np.pi)*theta_k - zeta1)))
 
-def path_loss(d_k, fc, eta_LoS, eta_NLoS, P_LoS):
-    PL_LoS = 20 * np.log10((4 * np.pi * fc * d_k) / c) + eta_LoS
-    PL_NLoS = 20 * np.log10((4 * np.pi * fc * d_k) / c) + eta_NLoS
+def path_loss(d_k, f_c, eta_LoS, eta_NLoS, P_LoS):
+    c = 300000 #빛의 속도
+    PL_LoS = 20 * np.log10((4 * np.pi * f_c * d_k) / c) + eta_LoS
+    PL_NLoS = 20 * np.log10((4 * np.pi * f_c * d_k) / c) + eta_NLoS
     return P_LoS * PL_LoS + (1 - P_LoS) * PL_NLoS
-
-# Example usage:
-PL = path_loss(d_k, fc, eta_LoS, eta_NLoS, P_LoS)
 
 def data_rate_and_energy(b_k, p_k, h_k, sigma2, a_k, s):
     R_k = b_k * np.log2(1 + (p_k * np.linalg.norm(h_k) ** 2) / sigma2)
     t_comm = (a_k * s) / R_k
     E_comm = (t_comm * sigma2 * (2 ** (a_k * s / (b_k * t_comm)) - 1)) / np.linalg.norm(h_k) ** 2
     return R_k, t_comm, E_comm
-
-# Example usage:
-R_k, t_comm, E_comm = data_rate_and_energy(b_k, p_k, h_k, sigma2, a_k, s)
-
-###
-### Optimization
-###
-
-# Variables
-a_k = cp.Variable((K, N), boolean=True)  # Scheduling variable for K devices and N rounds
-
-# Objective Function
-objective = cp.Minimize(2 / (N * eta) * (F_w0 - F_star) + ... )  # Continue with the formula
-
-# Constraints
-constraints = [
-    cp.sum(b_k) <= B,  # Bandwidth constraint
-    cp.sum(E_comm + E_comp) <= E_k,  # Energy constraint
-    t_comm <= epsilon  # Time constraint
-]
-
-# Problem Definition
-problem = cp.Problem(objective, constraints)
-
-# Solve the problem
-problem.solve()
-
-print("Optimal Scheduling Variables:", a_k.value)
 
 if __name__ == "__main__":
     uav_pos = np.array([x_u, y_u])  # UAV position at round n
@@ -136,7 +107,35 @@ if __name__ == "__main__":
 
     # Start the server
     start_server()
+    # Example: Running the first client
+    data = {'X_train': X_train, 'y_train': y_train, 'X_test': X_test, 'y_test': y_test}
+    run_client(device_id=1, data=data)
 
     # Start clients
     for i in range(num_devices):
         run_client(device_id=i, data=get_device_data(i))
+
+    ###
+    ### Optimization
+    ###
+
+    # Variables
+    a_k = cp.Variable((K, N), boolean=True)  # Scheduling variable for K devices and N rounds
+
+    # Objective Function
+    objective = cp.Minimize(2 / (N * eta) * (F_w0 - F_star) + ... )  # Continue with the formula
+
+    # Constraints
+    constraints = [
+        cp.sum(b_k) <= B,  # Bandwidth constraint
+        cp.sum(E_comm + E_comp) <= E_k,  # Energy constraint
+        t_comm <= epsilon  # Time constraint
+    ]
+
+    # Problem Definition
+    problem = cp.Problem(objective, constraints)
+
+    # Solve the problem
+    problem.solve()
+
+    print("Optimal Scheduling Variables:", a_k.value)
