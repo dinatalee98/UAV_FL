@@ -59,25 +59,14 @@ fl.server.start_server(
     strategy=fl.server.strategy.FedAvg(evaluate_metrics_aggregation_fn=weighted_average)
 )
 
-###
-### distance
-###
-
 def euclidean_distance(uav_pos, device_pos, altitude):
     return np.sqrt(np.sum((uav_pos - device_pos) ** 2) + altitude ** 2)
-
-###
-### Computation model
-###
 
 def computation_time_energy(c_k, D_k, f_k, a_k, alpha_k):
     t_comp = (c_k * D_k) / f_k
     E_comp = a_k * (alpha_k / 2) * c_k * D_k * (f_k ** 2)
     return t_comp, E_comp
 
-###
-### Communication model
-###
 def LoS_prob(H_u, d_k):
     theta_k = np.arctan(H_u / d_k)
     zeta1 = 3 # constants depending on theta_k s
@@ -123,7 +112,7 @@ if __name__ == "__main__":
     a_k = cp.Variable((K, N), boolean=True)  # Scheduling variable for K devices and N rounds
 
     # Objective Function
-    objective = cp.Minimize(2 / (N * eta) * (F_w0 - F_star) + ... )  # Continue with the formula
+    objective = cp.Minimize(2 / (N * eta) * (F_w0 - F_star) + 4 * K * kappa / N * (D ** 2) )  # Continue with the formula
 
     # Constraints
     constraints = [
