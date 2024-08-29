@@ -75,6 +75,10 @@ def federated_aggregation(clients, global_model):
     global_model.set_weights(new_weights)
     return global_model
 
+def cvxpy():
+    
+    P1 = 2 / (N * eta
+
 def main():
     # Create model
     model = models.Sequential([
@@ -105,8 +109,7 @@ def main():
         print(f"Round {round+1}")
         global_model = federated_aggregation(clients, global_model)
         loss, _, metrics = clients[0].evaluate(global_model.get_weights(), {})
-        print(f"Global model loss: {loss}, accuracy: {metrics['accuracy']}
-")
+        print(f"Global model loss: {loss}, accuracy: {metrics['accuracy']}")
 
 if __name__ == "__main__":
     main()
