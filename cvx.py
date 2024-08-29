@@ -9,7 +9,11 @@ def computation_time_energy(c_k, D_k, f_k, a_k, alpha_k): # Eq 3 & 4
     E_comp = a_k * (alpha_k / 2) * c_k * D_k * (f_k ** 2)
     return t_comp, E_comp
 
-#5 추가
+def P_LoS(n, k):
+    zeta1 = 1
+    zeta2 = 2
+    theta_k = np.arctan(H_u/d[k][n]) # d[k][n] distance between UAV and IoT
+    return 1 / (1 + zeta1 * np.exp(-zeta2 * (180 / np.pi * theta_k - zeta1)))
 
 def path_loss(d_k, fc, eta_LoS, eta_NLoS, P_LoS): # Eq 6 & 7 & 8
     PL_LoS = 20 * np.log10((4 * np.pi * fc * d_k) / c) + eta_LoS
