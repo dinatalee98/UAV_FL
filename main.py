@@ -76,8 +76,7 @@ def federated_aggregation(clients, global_model):
     return global_model
 
 def cvxpy():
-    
-    P1 = 2 / (N * eta
+    P1 = 2 / (N * eta)
 
 def main():
     # Create model
