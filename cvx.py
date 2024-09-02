@@ -27,6 +27,13 @@ def path_loss(k, n, d, f_c, eta_LoS, eta_NLoS, P_LoS): # Eq 6 & 7 & 8
     return P_LoS * PL_LoS(k, n, f_c, d, eta_LoS) + (1 - P_LoS) * PL_NLoS(k, n, f_c, d, eta_NLoS)
 
 
+def channel_coefficient(alpha_0, d, beta, PL_LoS, PL_NLoS): # Eq 9, 10, 11
+    large_scale_fading = alpha_0 * d ** beta
+    small_scale_fading = np.sqrt((K / (K+1)) * PL_LoS) + np.sqrt((1 / (K+1)) * PL_NLoS)
+    h_k = np.sqrt(large_scale_fading * small_scale_fading)
+    return h_k
+
+
 def data_rate_and_energy(n, b_k, p_k, h_k, sigma, a_k, s): # Eq 12, 13, 14
     R_k = b_k[n] * np.log2(1 + (p_k[n] * np.linalg.norm(h_k[n]) ** 2) / sigma ** 2)
     t_comm = (a_k[n] * s) / R_k
